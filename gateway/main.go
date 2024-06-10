@@ -1,15 +1,19 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	common "github.com/millukii/commons"
-	pb "github.com/millukii/commons/api"
+	"github.com/millukii/commons/discovery"
+	"github.com/millukii/commons/discovery/consul"
+	"github.com/millukii/openmarket-gateway/gateway"
 	"github.com/millukii/openmarket-gateway/handlers"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -18,7 +22,9 @@ import (
 
 var (
 	httpAddr = common.EnvString("HTTP_ADDR", ":8080")
+	consulAddr = common.EnvString("CONSUL_ADDR", "localhost:8500")
 	orderService = "localhost:2000"
+	serviceName = "gateway"
 )
 
 func main() {
@@ -31,12 +37,35 @@ func main() {
 
 	defer conn.Close()
 
-	c := pb.NewOrderServiceClient(conn)
+	registry , err := consul.NewRegistry(consulAddr, serviceName)
+	
+	if err !=nil{
+		log.Fatalf("Failed to registry gateway: %v", err)
+	}
+	ctx := context.Background()
+	instanceId :=discovery.GenerateInstanceID(serviceName)
+
+	if err := registry.Register(ctx, instanceId, serviceName,httpAddr); err!=nil{
+		log.Fatalf("Failed to registry: %v", err)
+	}
+
+	go func(){
+		for {
+			if err := registry.HealthCheck(instanceId, serviceName); err!=nil{
+				log.Fatal("failed to healthcheck")
+			}
+			time.Sleep(time.Second*1)
+		}
+	}()
+
+	defer registry.Deregister(ctx, instanceId, serviceName)
+	
+	ordersGateway := gateway.NewGRPCGateway(registry)
 
 	log.Println("Dialing order service: ", orderService)
 	mux := http.NewServeMux()
 
-	handler := handlers.NewHttpHandler(c)
+	handler := handlers.NewHttpHandler(ordersGateway)
 
 	handler.RegisterRoutes(mux)
 

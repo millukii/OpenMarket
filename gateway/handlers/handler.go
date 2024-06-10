@@ -7,17 +7,17 @@ import (
 	common "github.com/millukii/commons"
 	pb "github.com/millukii/commons/api"
 	errors "github.com/millukii/commons/errors"
+	"github.com/millukii/openmarket-gateway/gateway"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-
 )
 
 type handler struct {
-	client pb.OrderServiceClient
+	gateway gateway.OrdersGateway
 }
 
-func NewHttpHandler(c pb.OrderServiceClient) *handler {
-	return &handler{c}
+func NewHttpHandler(gateway gateway.OrdersGateway) *handler {
+	return &handler{gateway: gateway}
 }
 
 func (h *handler) RegisterRoutes(mux *http.ServeMux){
@@ -45,7 +45,7 @@ func (h *handler) HandleCreateOrder(w http.ResponseWriter, r  *http.Request){
 		common.WriteError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	order, err := h.client.CreateOrder(r.Context(), &pb.CreateOrderRequest{
+	order, err := h.gateway.CreateOrder(r.Context(), &pb.CreateOrderRequest{
 		CustomerOd: customerID,
 		Items: items,
 	})
