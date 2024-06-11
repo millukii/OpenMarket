@@ -18,6 +18,14 @@ use (
 ./stock
 )
 
+## Instrucciones
+
+- Instalar requerimientos
+- Posicionarse desde una terminal en la carpeta raíz
+- Asegurarse de que docker se está ejecutando
+- Ejecutar el comando docker compose up
+- Ingresar a la ui de rabbit mq en localhost:5672 con user-pass guest
+
 #### Referencias
 
 - https://www.youtube.com/watch?v=KdnxzgSNLTU&ab_channel=Tiago
