@@ -7,7 +7,6 @@ import (
 	pb "github.com/millukii/commons/api"
 	errors "github.com/millukii/commons/errors"
 	"github.com/millukii/openmarket-orders/types"
-
 )
 
 type Service struct {

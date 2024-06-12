@@ -10,6 +10,7 @@ import (
 	"time"
 
 	common "github.com/millukii/commons"
+	"github.com/millukii/commons/broker/rabbitmq"
 	"github.com/millukii/commons/discovery"
 	"github.com/millukii/commons/discovery/consul"
 	"github.com/millukii/openmarket-orders/handler"
@@ -23,6 +24,10 @@ var (
 	serviceName = "orders"
 	consulAddr = common.EnvString("CONSUL_ADDR", "localhost:8500")
 	grpcAddr = common.EnvString("GRPC_ADDR", "localhost:2000")
+	ampqHost = common.EnvString("RABBITMQ_HOST", "localhost")
+	ampqPort = common.EnvString("RABBITMQ_PORT", "5672")
+	ampqUser = common.EnvString("RABBITMQ_USER", "guest")
+	ampqPass = common.EnvString("RABBITMQ_PASS", "guest")
 )
 func main() {
 
@@ -49,6 +54,16 @@ func main() {
 
 	defer registry.Deregister(ctx, instanceId, serviceName)
 
+ch, close :=	rabbitmq.Connect(ampqUser, ampqPass,ampqHost, ampqPort)
+
+ 
+defer func() {
+close()
+ch.Close()
+}()
+
+
+
 	grpcServer := grpc.NewServer()
 
 	l, err := net.Listen("tcp", grpcAddr)
@@ -62,7 +77,7 @@ func main() {
 
  svc := service.NewService(store)
 
- handler.NewGRPCHandler(grpcServer, *svc)
+ handler.NewGRPCHandler(grpcServer, *svc, ch)
 
  svc.CreateOrder(context.Background())
 
