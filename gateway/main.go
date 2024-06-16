@@ -17,7 +17,6 @@ import (
 	"github.com/millukii/openmarket-gateway/handlers"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-
 )
 
 var (
@@ -29,7 +28,7 @@ var (
 
 func main() {
 
-	conn, err:= grpc.Dial(orderService, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err:= grpc.NewClient(orderService, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
 	if err !=nil{
 		log.Fatalf("Failed to dial server: %v", err)
@@ -52,6 +51,7 @@ func main() {
 	go func(){
 		for {
 			if err := registry.HealthCheck(instanceId, serviceName); err!=nil{
+				log.Println(err)
 				log.Fatal("failed to healthcheck")
 			}
 			time.Sleep(time.Second*1)
@@ -73,17 +73,19 @@ func main() {
 	if err := http.ListenAndServe(httpAddr,mux); err !=nil{
 		log.Fatal("failed to start")
 	}
+
 	srv := &http.Server{
 	Addr: httpAddr,
 	Handler: mux,
 	}
 	term := make(chan os.Signal, 1)
 	signal.Notify(term, os.Interrupt, syscall.SIGTERM)
+
 	go func() {
-	<-term
-	if err := srv.Close(); !errors.Is(err, http.ErrServerClosed) {
-	log.Fatalf("Error closing Server: %v", err)
-	}
+		<-term
+		if err := srv.Close(); !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalf("Error closing Server: %v", err)
+		}
 	}()
 }
 

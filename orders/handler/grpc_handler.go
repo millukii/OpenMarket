@@ -47,6 +47,7 @@ func (h *grpcHandler) CreateOrder(ctx context.Context, req *pb.CreateOrderReques
 	h.ch.PublishWithContext(ctx,"", q.Name, false,false,amqp.Publishing{
 		ContentType: "application/json",
 		Body: marshalledOrder,
+		DeliveryMode: amqp.Persistent,
 	})
 	return order, nil
 }

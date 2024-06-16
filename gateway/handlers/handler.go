@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
@@ -10,8 +11,14 @@ import (
 	"github.com/millukii/openmarket-gateway/gateway"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-)
 
+)
+var (
+	createOrderRoute = "/api/customers/{customerID}/orders"
+)
+const (
+	POST = "POST"
+)
 type handler struct {
 	gateway gateway.OrdersGateway
 }
@@ -22,8 +29,8 @@ func NewHttpHandler(gateway gateway.OrdersGateway) *handler {
 
 func (h *handler) RegisterRoutes(mux *http.ServeMux){
 
-		mux.HandleFunc("POST /api/customer/{customerID}/orders", h.HandleCreateOrder )
-
+		mux.HandleFunc(fmt.Sprintf("%s %s",POST, createOrderRoute), h.HandleCreateOrder )
+	   log.Println("route registered ",createOrderRoute)
 }
 
 
